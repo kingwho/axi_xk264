@@ -1,0 +1,15 @@
+PASS REG_IDR                  @00 = 02640001
+PASS REG_STATUS               @08 = 00000000
+PASS REG_ISTAT                @0c = 00000000
+PASS REG_CFG                  @10 = 00001234
+PASS REG_PIC                  @14 = 001e0028
+PASS REG_YUV                  @18 = 10000000
+PASS REG_BANK0                @1c = 20000000
+PASS REG_BANK1                @20 = 30000000
+PASS REG_BSADDR               @24 = 40000000
+PASS REG_BSLEN                @28 = 00000000
+PASS REG_FRMCNT               @2c = 00000000
+PASS back-to-back IDR  = 02640001
+PASS back-to-back CFG  = 00001234
+ALL CHECKS PASSED
+/home/kw/codePrj/axi_xk264/sim/axi_testbench/tb_axil_hostile.v:165: $finish called at 690000 (1ps)

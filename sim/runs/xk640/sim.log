@@ -1,0 +1,34 @@
+TB 530000: frame 0 start (intra=1)
+TB 500000000: probe fstate=1 mbx=20 mby=4 bs_byt=603 arv=0 awv=0
+TB 1000000000: probe fstate=1 mbx=29 mby=8 bs_byt=1096 arv=0 awv=0
+TB 1500000000: probe fstate=1 mbx=39 mby=12 bs_byt=1593 arv=0 awv=0
+TB 2000000000: probe fstate=1 mbx=8 mby=17 bs_byt=2086 arv=0 awv=0
+TB 2500000000: probe fstate=1 mbx=18 mby=21 bs_byt=2582 arv=0 awv=0
+TB 3000000000: probe fstate=1 mbx=27 mby=25 bs_byt=3075 arv=0 awv=0
+TB 3500000000: probe fstate=1 mbx=37 mby=29 bs_byt=3572 arv=0 awv=0
+TB 3516690000: frame 0 done, bslen=3584
+TB: dumped 3584 bytes to bs_frame0.bin
+TB 3516800000: frame 1 start (intra=0)
+TB 4000000000: probe fstate=1 mbx=36 mby=1 bs_byt=236 arv=0 awv=0
+TB 4500000000: probe fstate=1 mbx=20 mby=3 bs_byt=507 arv=0 awv=0
+TB 5000000000: probe fstate=1 mbx=4 mby=5 bs_byt=778 arv=0 awv=0
+TB 5500000000: probe fstate=1 mbx=28 mby=6 bs_byt=987 arv=0 awv=0
+TB 6000000000: probe fstate=1 mbx=12 mby=8 bs_byt=1250 arv=0 awv=0
+TB 6500000000: probe fstate=1 mbx=35 mby=9 bs_byt=1460 arv=0 awv=0
+TB 7000000000: probe fstate=1 mbx=19 mby=11 bs_byt=1730 arv=0 awv=0
+TB 7500000000: probe fstate=1 mbx=3 mby=13 bs_byt=2001 arv=0 awv=0
+TB 8000000000: probe fstate=1 mbx=27 mby=14 bs_byt=2204 arv=0 awv=0
+TB 8500000000: probe fstate=1 mbx=10 mby=16 bs_byt=2474 arv=0 awv=0
+TB 9000000000: probe fstate=1 mbx=34 mby=17 bs_byt=2683 arv=0 awv=0
+TB 9500000000: probe fstate=1 mbx=18 mby=19 bs_byt=2953 arv=0 awv=0
+TB 10000000000: probe fstate=1 mbx=2 mby=21 bs_byt=3154 arv=0 awv=0
+TB 10500000000: probe fstate=1 mbx=25 mby=22 bs_byt=3427 arv=0 awv=0
+TB 11000000000: probe fstate=1 mbx=9 mby=24 bs_byt=3697 arv=0 awv=0
+TB 11500000000: probe fstate=1 mbx=33 mby=25 bs_byt=3907 arv=0 awv=0
+TB 12000000000: probe fstate=1 mbx=17 mby=27 bs_byt=4170 arv=0 awv=0
+TB 12500000000: probe fstate=1 mbx=1 mby=29 bs_byt=4377 arv=0 awv=0
+TB 12752070000: frame 1 done, bslen=4603
+TB: dumped 4603 bytes to bs_frame1.bin
+TB: FRMCNT=2
+TB: *** ALL CHECKS PASSED ***
+sim/axi_testbench/tb_xk264_axi_640.v:468: $finish called at 12752100000 (1ps)

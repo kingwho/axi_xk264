@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device tree fragment for the xk264 encoder in the Vivado block
+ * design built by scripts/create_bd.tcl.
+ *
+ * Append to <petalinux-project>/project-spec/meta-user/recipes-bsp/
+ * device-tree/files/system-user.dtsi
+ *
+ * AXI-Lite control base 0x43C00000 (see create_bd.tcl address edit),
+ * IRQ F2P[0] = GIC SPI 61 level-high, DMA through S_AXI_HP0 into DDR.
+ */
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Keeps the top of DDR free so the driver's
+		 * dma_alloc_coherent (YUV in + 2 recon banks +
+		 * 1 MiB bitstream, ~7 MiB at FHD) can stay
+		 * physically contiguous.
+		 */
+		xk264_dma: xk264_dma@1f000000 {
+			compatible = "shared-dma-pool";
+			reg = <0x1f000000 0x0800000>;
+			reusable;
+		};
+	};
+};
+
+&amba {
+	xk264_enc: xk264@43c00000 {
+		compatible = "xk264,axi-encoder";
+		reg = <0x43c00000 0x10000>;
+		interrupt-parent = <&intc>;
+		interrupts = <0 61 4>;	/* SPI 61, IRQ_F2P[0], level-high */
+		memory-region = <&xk264_dma>;
+	};
+};

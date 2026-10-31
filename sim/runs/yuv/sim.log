@@ -1,0 +1,35 @@
+TB: using yuv input /home/kw/codePrj/axi_xk264/sim/runs/yuv/in.yuv (I420 640 x 480, 460800 B/frame)
+TB 530000: frame 0 start (intra=1)
+TB 500000000: probe fstate=1 mbx=14 mby=4 bs_byt=11375 arv=0 awv=0
+TB 1000000000: probe fstate=1 mbx=19 mby=8 bs_byt=21605 arv=0 awv=0
+TB 1500000000: probe fstate=1 mbx=24 mby=12 bs_byt=31962 arv=0 awv=0
+TB 2000000000: probe fstate=1 mbx=30 mby=16 bs_byt=42195 arv=0 awv=0
+TB 2500000000: probe fstate=1 mbx=35 mby=20 bs_byt=52498 arv=0 awv=0
+TB 3000000000: probe fstate=1 mbx=0 mby=25 bs_byt=62717 arv=0 awv=0
+TB 3500000000: probe fstate=1 mbx=5 mby=29 bs_byt=73090 arv=0 awv=0
+TB 3610200000: frame 0 done, bslen=75259
+TB: dumped 75259 bytes to bs_frame0.bin
+TB 3610310000: frame 1 start (intra=0)
+TB 4000000000: probe fstate=1 mbx=24 mby=1 bs_byt=2394 arv=0 awv=0
+TB 4500000000: probe fstate=1 mbx=8 mby=3 bs_byt=4854 arv=0 awv=0
+TB 5000000000: probe fstate=1 mbx=32 mby=4 bs_byt=7324 arv=0 awv=0
+TB 5500000000: probe fstate=1 mbx=16 mby=6 bs_byt=9737 arv=0 awv=0
+TB 6000000000: probe fstate=1 mbx=0 mby=8 bs_byt=12139 arv=1 awv=0
+TB 6500000000: probe fstate=1 mbx=23 mby=9 bs_byt=14516 arv=0 awv=0
+TB 7000000000: probe fstate=1 mbx=7 mby=11 bs_byt=16948 arv=0 awv=0
+TB 7500000000: probe fstate=1 mbx=31 mby=12 bs_byt=19324 arv=0 awv=0
+TB 8000000000: probe fstate=1 mbx=15 mby=14 bs_byt=21762 arv=0 awv=0
+TB 8500000000: probe fstate=1 mbx=38 mby=15 bs_byt=24143 arv=0 awv=0
+TB 9000000000: probe fstate=1 mbx=22 mby=17 bs_byt=26570 arv=0 awv=0
+TB 9500000000: probe fstate=1 mbx=6 mby=19 bs_byt=29021 arv=0 awv=0
+TB 10000000000: probe fstate=1 mbx=30 mby=20 bs_byt=31452 arv=0 awv=0
+TB 10500000000: probe fstate=1 mbx=14 mby=22 bs_byt=33905 arv=0 awv=0
+TB 11000000000: probe fstate=1 mbx=37 mby=23 bs_byt=36295 arv=0 awv=0
+TB 11500000000: probe fstate=1 mbx=21 mby=25 bs_byt=38740 arv=0 awv=0
+TB 12000000000: probe fstate=1 mbx=5 mby=27 bs_byt=41208 arv=0 awv=0
+TB 12500000000: probe fstate=1 mbx=29 mby=28 bs_byt=43645 arv=0 awv=0
+TB 12845700000: frame 1 done, bslen=45498
+TB: dumped 45498 bytes to bs_frame1.bin
+TB: FRMCNT=2
+TB: *** ALL CHECKS PASSED ***
+sim/axi_testbench/tb_xk264_axi_640.v:561: $finish called at 12845730000 (1ps)
