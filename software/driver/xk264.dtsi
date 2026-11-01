@@ -8,6 +8,15 @@
  *
  * AXI-Lite control base 0x43C00000 (see create_bd.tcl address edit),
  * IRQ F2P[0] = GIC SPI 61 level-high, DMA through S_AXI_HP0 into DDR.
+ *
+ * Two drivers match this node and both drive the same hardware, so only
+ * one of them may be loaded at a time:
+ *   xk264.ko       legacy misc device /dev/xk264, ioctl + mmap
+ *   xk264-v4l2.ko  standard V4L2 memory-to-memory encoder (/dev/videoN)
+ * Both list "xk264,axi-encoder" in their of_match_table.  Which one is
+ * bound is decided by module load order (the first driver to register
+ * claims the node); unload the other one, or blacklist its autoload
+ * (e.g. /etc/modprobe.d/blacklist-xk264.conf) if you want a fixed choice.
  */
 
 / {

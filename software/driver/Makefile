@@ -9,5 +9,6 @@
 # and enable it via petalinux-config -> rootfs.
 
 obj-m += xk264.o
+obj-m += xk264-v4l2.o
 
 ccflags-y += -Wno-unused-function

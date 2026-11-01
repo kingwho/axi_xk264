@@ -150,7 +150,7 @@ scripts/run_sim.sh                        # regress: 64x64 I+P 全流程回归
 scripts/run_sim.sh bars -n 4 -g 3         # 640x480 滚动彩条, I-P-P-I
 scripts/run_sim.sh bars --verify          # 彩条 + 解码 PSNR 验证(前 2 帧)
 scripts/run_sim.sh hostile                # AXI-Lite araddr 竞争回归
-# 自定义 YUV 输入: 原始 I420 裸流, 640x480, 多帧拼接(同 xk264_app -i 格式)
+# 自定义 YUV 输入: 原始 I420 裸流, 640x480, 多帧拼接(同 xk264-app -i 格式)
 scripts/run_sim.sh yuv in.yuv -n 2 -q 32
 scripts/run_sim.sh yuv in.yuv --pkg       # 仿真后离线打包 out.h264 可直接播放
 scripts/run_sim.sh bars -- +vcd           # '--' 后的参数原样传给 vvp
@@ -183,11 +183,11 @@ vvp /tmp/tb.vvp            # 期望: *** ALL CHECKS PASSED ***
 - `+nfrm=N +gop=M`（每 M 帧 IDR，验证多 GOP 序列 I-P-P-I）；
 - `+qp=N` 量化参数；
 - `+yuv=<file>` 用户自定义输入：原始 I420 裸流（640x480，多帧顺序
-  拼接，Y/U/V 平面布局与 `xk264_app -i` 完全相同），逐帧 `$fread`
+  拼接，Y/U/V 平面布局与 `xk264-app -i` 完全相同），逐帧 `$fread`
   读入后由 TB 转成 wrapper 的 MB 平铺序（与应用 `planar_to_tiled()`
   同一映射），文件不足 `+nfrm` 帧时到 EOF 提前停止；
 - 码流 dump 到 bs_frame<N>.bin 可用 `--pkg`（内部调
-  `software/app/xk264_app --sim-dir`）离线打包验证。
+  `software/app/xk264-app --sim-dir`）离线打包验证。
 
 注意：仿真必须使用带清零的 RAM 模型（本仓库已修改）。搜索窗 RAM 在
 I 帧后首个 P 帧只被部分写入，未写地址读出值必须确定（FPGA BRAM 上电为 0），
@@ -269,14 +269,14 @@ module reference 方式例化，见 create_bd.tcl）。
    ./xk264_test out.h264    # I 帧 + P 帧，打印码流长度
    ```
 
-   **应用 demo（software/app/xk264_app.c）**：可配置分辨率/帧率/GOP/QP，
+   **应用 demo（software/app/xk264-app.c）**：可配置分辨率/帧率/GOP/QP，
    输出可直接播放的 Annex-B 码流：
    ```bash
    cd software/app && make CROSS=arm-linux-gnueabihf-
    # 目标机：内置滚动彩条测试源，640x480@30fps，GOP 30
-   ./xk264_app -W 640 -H 480 -f 30 -g 30 -q 28 -o out.h264
+   ./xk264-app -W 640 -H 480 -f 30 -g 30 -q 28 -o out.h264
    # 从原始 I420 文件编码
-   ./xk264_app -W 1280 -H 720 -f 25 -g 50 -i input.yuv -o out.h264
+   ./xk264-app -W 1280 -H 720 -f 25 -g 50 -i input.yuv -o out.h264
    xk264-encode  -W 576 -H 1024 -f 25 -g 50 -i input_576x1024_YUV420P\ \(I420\).yuv -o out.h264
    
    ffplay out.h264
@@ -314,6 +314,224 @@ dump 的 bs_frame<N>.bin（主机验证，无需硬件）。非 16 倍数分辨�
 - `XK264_IOC_S_PARAM`：设置 mb_x/mb_y_total、qp
 - `XK264_IOC_ENCODE`：{flags(intra), timeout_ms} 入，{bs_len} 出；
   阻塞等待帧完成中断（ISTAT w1c 应答）
+
+### V4L2 编码驱动（xk264-v4l2.ko）
+
+`software/driver/xk264-v4l2.c` 是同一硬件的标准 V4L2 memory-to-memory
+编码驱动，与 misc 驱动并存于 Makefile/recipe，但两者匹配同一设备树节点，
+**同一时刻只能绑定一个**（先加载的模块占用设备；切换需 rmmod 后加载另一个）。
+
+- 设备节点：`/dev/videoN`，`V4L2_CAP_VIDEO_M2M_MPLANE`
+- OUTPUT 队列（`VIDEO_OUTPUT_MPLANE`）：`V4L2_PIX_FMT_YUV420M`，3 平面
+  （Y = W*H，U/V 各 (W/2)*(H/2)，bytesperline = W / W/2）
+- CAPTURE 队列（`VIDEO_CAPTURE_MPLANE`）：`V4L2_PIX_FMT_H264`，单平面，
+  直接输出可播放的 Annex-B 码流（SPS/PPS 在每个 IDR 前重复）
+- 驱动内核内完成：平面 YUV → 宏块平铺转换、64-bit 大端字节反序、
+  SPS/PPS/slice header 生成、防竞争字节插入；用户态无需再做任何封装
+- 控制项：
+  - `V4L2_CID_MPEG_VIDEO_GOP_SIZE`：IDR 间隔，默认 30
+  - `V4L2_CID_MPEG_VIDEO_H264_MIN_QP`：固定 QP，默认 28
+  - `V4L2_CID_MPEG_VIDEO_H264_LEVEL`：默认 LEVEL_4_0，写入 SPS level_idc
+- 帧率：`VIDIOC_S_PARM` 的 `timeperframe`（默认 30fps），写入 SPS VUI
+  timing_info
+- 尺寸约束：宽高需为偶数，<= 1920x1088 且宏块数 <= 8040；非 16 倍数时
+  驱动边缘复制填充至整宏块，再由 SPS crop 还原显示尺寸
+- 捕获 `sizeimage` 默认 1 MiB（与硬件码流缓冲等大），码流超出时该帧
+  以 `V4L2_BUF_FLAG_ERROR` 返回
+
+内核需开启 `CONFIG_VIDEO_V4L2`、`CONFIG_VIDEOBUF2_V4L2`、
+`CONFIG_VIDEOBUF2_DMA_CONTIG`，以及 **`CONFIG_V4L2_MEM2MEM_DEV`**。
+注意后四个都是 **无提示的隐藏符号**（Kconfig 里只有 `tristate` 没有菜单
+字符串），菜单里找不到，只能通过使能会 `select` 它们的驱动间接打开：
+
+```bash
+petalinux-config -c kernel
+#   -> Device Drivers -> Multimedia Support
+#      -> V4L test drivers
+#         [*] Virtual Video Test Driver (VIVID)       # select 三个 VIDEOBUF2_*
+#         [*] Virtual Memory-to-Memory Driver (VIM2M) # select V4L2_MEM2MEM_DEV
+```
+
+缺 `CONFIG_V4L2_MEM2MEM_DEV` 的典型症状：`struct v4l2_fh has no member
+named 'm2m_ctx'`、`V4L2_MEM2MEM_DEV` 相关的 m2m 符号在加载时报
+`Unknown symbol`。驱动源码里已加 `#error` 提前拦截这几个配置。
+
+验证/使用：
+
+```bash
+insmod xk264-v4l2.ko            # 与 xk264.ko 互斥，先卸载 xk264
+v4l2-ctl -d /dev/videoN --list-formats-ext
+v4l2-ctl -d /dev/videoN -c gop_size=50,h264_min_qp=28,h264_level=4
+```
+
+m2m 编码设备需要应用同时喂入 YUV 并取出码流，`v4l2-ctl --stream-mmap`
+无法提供输入平面，因此实际使用应由应用/框架驱动。仓库自带 demo
+`software/app/xk264-v4l2-app.c`（`make xk264-v4l2-app` 或目标机
+`make CROSS=arm-linux-gnueabihf- xk264-v4l2-app`），参数与 xk264-app
+一致（-W/-H/-f/-g/-q/-n/-i/-o/--level，默认内置滚动彩条）：
+
+```bash
+./xk264-v4l2-app -d /dev/video0 -W 640 -H 480 -f 30 -g 30 -q 28 \
+                 -i in.yuv -o out.h264
+```
+
+ffmpeg 也可用其 `h264_v4l2m2m` 编码器（v4l2m2m 编码器会把该节点作为
+编码设备使用）：
+
+```bash
+ffmpeg -f rawvideo -pix_fmt yuv420p -s 640x480 -framerate 30 -i in.yuv \
+       -c:v h264_v4l2m2m out.h264
+ffplay out.h264
+```
+
+#### 目标机 ffmpeg 的编译（PetaLinux 2020.2）
+
+只是**验证码流**（解码 out.h264、算 PSNR）不需要目标机 ffmpeg，用
+`tools/` 里的主机版即可。要在**板子上**用 `h264_v4l2m2m` 调本驱动编码，
+则需要带 v4l2-m2m 支持的 ffmpeg（>= 4.0；`h264_v4l2m2m` 请求的 OUTPUT
+格式是 `V4L2_PIX_FMT_YUV420M`，与本驱动一致）。两种途径：
+
+**途径 A：Yocto 集成进 rootfs（推荐）**
+
+PetaLinux 2020.2 对应 Yocto zeus，`meta-openembedded/meta-multimedia`
+自带 ffmpeg 4.2.x（已含 v4l2m2m 编码器）。分三步，其中只有第 2 步
+（勾选软件包）能在 petalinux-config 菜单里完成：
+
+**1) 添加 meta-multimedia 层**（ffmpeg recipe 不在 PetaLinux 默认层里）：
+
+```bash
+cd <plnx-proj>
+git clone -b zeus https://github.com/openembedded/meta-openembedded.git
+petalinux-config            # 顶层配置（不带 -c）
+#   -> Yocto Settings
+#      -> User Layers
+#         -> 新增一行，填绝对路径，如：
+#            /opt/meta-openembedded/meta-multimedia
+#   保存退出（写进 project-spec/configs/config）
+```
+
+**2) 在 rootfs 菜单勾选 ffmpeg**：
+
+```bash
+petalinux-config -c rootfs
+#   -> Filesystem Packages
+#      -> multimedia
+#         -> ffmpeg            按空格选 [*]
+#   （包多找不到时按 "/" 搜索 "ffmpeg"）
+```
+
+**3) license 放行**（ffmpeg recipe 带 `LICENSE_FLAGS = "commercial"`，
+菜单里没有对应开关，必须写 conf）。在
+`project-spec/meta-user/conf/petalinuxbsp.conf` 追加（zeus 用
+`LICENSE_FLAGS_WHITELIST`；新版本 Yocto 改用
+`LICENSE_FLAGS_ACCEPTED += "commercial_ffmpeg"`）：
+
+```python
+LICENSE_FLAGS_WHITELIST += "commercial"
+```
+
+然后 `petalinux-build`。上板后确认编码器在：
+
+```bash
+ffmpeg -hide_banner -encoders | grep v4l2   # 应看到 h264_v4l2m2m
+```
+
+**途径 B：SDK 交叉编译（不进 rootfs，按需拷贝）**
+
+```bash
+petalinux-build --sdk
+./images/linux/sdk.sh -d /opt/petalinux-sdk    # 安装 SDK（默认交互式）
+source /opt/petalinux-sdk/environment-setup-cortexa9t2hf-neon-xilinx-linux-gnueabi
+
+tar xf ffmpeg-4.2.10.tar.xz && cd ffmpeg-4.2.10
+./configure \
+    --enable-cross-compile --cross-prefix=${CROSS_COMPILE} \
+    --arch=arm --target-os=linux --sysroot=${SDKTARGETSYSROOT} \
+    --prefix=/usr --enable-shared --disable-static \
+    --disable-doc --disable-debug --disable-everything \
+    --enable-ffmpeg --enable-avcodec --enable-avformat --enable-avutil \
+    --enable-protocol=file --enable-demuxer=rawvideo --enable-demuxer=h264 \
+    --enable-muxer=rawvideo --enable-muxer=h264 \
+    --enable-decoder=h264 --enable-encoder=h264_v4l2m2m \
+    --enable-parser=h264 --enable-filter=scale --enable-indev=v4l2
+make -j$(nproc)
+make install DESTDIR=$PWD/rootfs
+# 把 rootfs/usr 同步到板子（scp / nfs / 打包进 image）
+```
+
+`--disable-everything` 之后的 `--enable-*` 可按需裁剪；关键是
+`h264_v4l2m2m` 编码器（v4l2m2m 依赖内核头里的 `linux/videodev2.h`，
+SDK sysroot 已带，configure 会自动探测）。注意 `environment-setup-*`
+脚本已导出 `CC/CFLAGS/LDFLAGS`，configure 不要再用 `--cc=` 覆盖。
+
+**板子上联用验证**：
+
+```bash
+insmod xk264-v4l2.ko                     # 先 rmmod xk264
+ffmpeg -hide_banner -encoders | grep v4l2
+ffmpeg -f rawvideo -pix_fmt yuv420p -s 640x480 -framerate 30 -i in.yuv \
+       -c:v h264_v4l2m2m -g 30 -b:v 0 out.h264
+ffmpeg -i out.h264 -f rawvideo dec.yuv   # 解码回 YUV 做对比
+```
+
+rootfs 一般不含 SDL，`ffplay` 不可用；验证用 `ffmpeg` 解码回 YUV 即可。
+`h264_v4l2m2m` 不支持码率控制时把 `-b:v` 置 0，质量由驱动的
+`h264_min_qp` 控制（见上文控制项）。
+
+#### GStreamer（v4l2h264enc）
+
+gst-plugins-good 1.14+ 的 `v4l2h264enc` 直接对接本驱动（PetaLinux 2020.2
+自带 GStreamer 1.16；gstreamer 在 OE-core，不需要 meta-multimedia 层，
+也**不需要**改任何 conf 文件，全部可在菜单完成）：
+
+```bash
+petalinux-config -c rootfs
+#   -> Filesystem Packages
+#      -> multimedia
+#         -> gstreamer1.0                 [*]
+#         -> gstreamer1.0-plugins-base    [*]
+#         -> gstreamer1.0-plugins-good    [*]   # v4l2h264enc 在这里
+#         -> gstreamer1.0-plugins-bad     [*]   # 可选，rawvideoparse
+#   （按 "/" 直接搜包名最快）
+petalinux-build
+```
+
+等价的 conf 写法（`project-spec/meta-user/conf/petalinuxbsp.conf`，
+与菜单二选一，效果相同）：
+
+```python
+IMAGE_INSTALL_append = " gstreamer1.0 gstreamer1.0-plugins-base \
+                         gstreamer1.0-plugins-good gstreamer1.0-plugins-bad"
+```
+
+板子上确认元素存在后即可跑通：
+
+```bash
+gst-inspect-1.0 v4l2h264enc
+
+# 测试图案 -> 硬件编码 -> Annex-B 文件
+gst-launch-1.0 videotestsrc num-buffers=60 is-live=false ! \
+    video/x-raw,width=640,height=480,format=I420,framerate=30/1 ! \
+    v4l2h264enc ! h264parse ! filesink location=out.h264
+
+# 已有 I420 裸文件（rawvideoparse 在 plugins-bad 的 rawparse）
+gst-launch-1.0 filesrc location=in.yuv ! \
+    rawvideoparse width=640 height=480 format=i420 framerate=30/1 ! \
+    v4l2h264enc ! h264parse ! filesink location=out.h264
+```
+
+注意事项：
+
+- 输入只协商出 `I420`（驱动仅支持 `YUV420M`，GStreamer 将其映射为
+  `video/x-raw,format=I420`）；其他格式需先 `videoconvert`。
+- 驱动实现了 `VIDIOC_ENCODER_CMD(STOP)`（经 m2m 框架的
+  `v4l2_m2m_ioctl_encoder_cmd`），`gst-launch -e` 的 EOS drain 才能
+  正常收尾；否则会报 drain 失败并丢末尾帧。
+- 码率类控制驱动不提供，`bitrate` 等属性自动不可用；调 QP/GOP 用
+  `extra-controls`，例如
+  `v4l2h264enc extra-controls="encode,h264_min_qp=28,gop_size=30"`。
+- 出问题时先 `GST_DEBUG=v4l2*:4 gst-launch-1.0 ...` 看格式协商与
+  ioctl 报错；排障可回退到上文的 `xk264-v4l2-app` 缩小范围。
 
 ## 已知集成点（对原核的修改）
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * xk264_app - application demo for the xk264 H.264 hardware encoder.
+ * xk264-app - application demo for the xk264 H.264 hardware encoder.
  *
  * Configurable resolution / frame rate / GOP / QP, encodes a raw I420
  * input file (or a built-in rolling color-bar test pattern) through
@@ -23,11 +23,11 @@
  *     make CROSS=arm-linux-gnueabihf-
  *
  * Run on target:
- *     ./xk264_app -W 640 -H 480 -f 30 -g 30 -q 28 -i in.yuv -o out.h264
+ *     ./xk264-app -W 640 -H 480 -f 30 -g 30 -q 28 -i in.yuv -o out.h264
  *     ffplay out.h264
  *
  * Offline (no hardware, package simulation dumps bs_frame<N>.bin):
- *     ./xk264_app --sim-dir /tmp/xk264_gop -W 640 -H 480 -f 30 -g 3
+ *     ./xk264-app --sim-dir /tmp/xk264_gop -W 640 -H 480 -f 30 -g 3
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -111,7 +111,7 @@ static void die(const char *fmt, ...)
 static void usage(void)
 {
 	printf(
-"usage: xk264_app [options]\n"
+"usage: xk264-app [options]\n"
 "  -W, --width N     picture width in pixels  (default 640)\n"
 "  -H, --height N    picture height in pixels (default 480)\n"
 "  -f, --fps N       frame rate, also written to VUI (default 30)\n"
@@ -604,7 +604,7 @@ int main(int argc, char **argv)
 	}
 	pattern_nframes = o.nframes;
 
-	printf("xk264_app: %dx%d (%dx%d MB) %dfps gop=%d qp=%d%s\n",
+	printf("xk264-app: %dx%d (%dx%d MB) %dfps gop=%d qp=%d%s\n",
 	       o.width, o.height, c.mbw, c.mbh, o.fps, o.gop, o.qp,
 	       (c.crop_r || c.crop_b) ? " (cropped to display size)" : "");
 	printf("output: %s, %s, %s\n", o.output,

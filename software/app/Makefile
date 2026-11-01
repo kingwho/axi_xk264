@@ -1,4 +1,4 @@
-# xk264_app - userspace demo for the xk264 hardware encoder
+# xk264-app - userspace demo for the xk264 hardware encoder
 #
 # Host build (offline packaging tests, --sim-dir):
 #     make
@@ -9,14 +9,17 @@ CROSS   ?=
 CC      := $(CROSS)gcc
 CFLAGS  ?= -O2 -Wall -Wextra
 
-TARGET  := xk264_app
+TARGETS := xk264-app xk264-v4l2-app
 
-all: $(TARGET)
+all: $(TARGETS)
 
-$(TARGET): xk264_app.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ xk264_app.c
+xk264-app: xk264-app.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ xk264-app.c
+
+xk264-v4l2-app: xk264-v4l2-app.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ xk264-v4l2-app.c
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGETS)
 
 .PHONY: all clean

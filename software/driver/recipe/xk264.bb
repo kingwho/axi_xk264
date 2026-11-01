@@ -20,6 +20,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-2.0;md5=801f80980d171dd6425
 inherit module
 
 SRC_URI = "file://xk264.c \
+           file://xk264-v4l2.c \
            file://xk264_regs.h \
            file://Makefile \
            "
